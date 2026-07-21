@@ -38,4 +38,11 @@ class DataLoader:
         parts = [self._load_league(*args) for args in LEAGUES]
         df = pd.concat([p for p in parts if not p.empty], ignore_index=True)
         df.rename(columns={"player_name": "player", "team_title": "team"}, inplace=True)
+
+        # A small number of names (~0.5%) have accented characters replaced
+        # with literal "?" or raw HTML entities in the source export itself
+        # (e.g. "??der", "Ta??der", "M&#039;Poku") — not recoverable, so
+        # these rows are dropped rather than shown broken in the demo.
+        garbled = df["player"].str.contains(r"\?|&#\d+;", regex=True, na=False)
+        df = df[~garbled].reset_index(drop=True)
         return df
